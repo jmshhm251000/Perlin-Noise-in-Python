@@ -17,8 +17,6 @@ class Vector:
         gy = math.sin(theta)
         return Vector(gx, gy)
 
-#need to add in list of grids
-
 grid = Vector(380, 280)
 print(grid)
 print(grid.gradient())
