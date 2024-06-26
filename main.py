@@ -4,15 +4,18 @@ import math
 import numpy as np
 
 
+# Generate gradients(a unit vector) for each grid points
 def generate_gradients(width, height):
     gradients = {}
     for x in range(width + 1):
         for y in range(height + 1):
             angle = random.uniform(0, 2 * math.pi)
+            # Store each gradient of length 1 in R^2, cos^2 + sin^2 = 1
             gradients[(x, y)] = (math.cos(angle), math.sin(angle))
     return gradients
 
 
+# Dot product of the gradient and the distance vector
 def dot_product(x, y, ix, iy, gradients):
     dx = x - ix
     dy = y - iy
@@ -20,20 +23,24 @@ def dot_product(x, y, ix, iy, gradients):
     return dx * gradient[0] + dy * gradient[1]
 
 
+# Smooth interpolation between grid points
 def fade(t):
     return t * t * t * (t * (t * 6 - 15) + 10)
 
 
+# Linear interpolation between two points
 def lerp(a, b, t):
     return a + t * (b - a)
 
 
+# Noise in a grid
 def noise(x, y, gradients):
     x0 = int(x)
     y0 = int(y)
     x1 = x0 + 1
     y1 = y0 + 1
 
+    #fade function for smooth interpolation
     dx = fade(x - x0)
     dy = fade(y - y0)
 
@@ -52,10 +59,11 @@ def noise(x, y, gradients):
     return lerp(id0, id1, dy)
 
 
+# generate perlin noise and assign it to a 2D array
 def generate_perlin_noise(width, height, scale, octaves, persistence, lacunarity):
     gradients = generate_gradients(width, height)
     x_cord = np.arange(width) / scale
-    y_cord = np.arange(width) / scale
+    y_cord = np.arange(height) / scale
     xv, yv = np.meshgrid(x_cord, y_cord)
 
     noise_array = np.zeros((width, height))
@@ -68,18 +76,23 @@ def generate_perlin_noise(width, height, scale, octaves, persistence, lacunarity
                 noise_value = noise(xv[y, x] * frequency, yv[y, x] * frequency, gradients) * amplitude
                 noise_array[x, y] += noise_value
     
+    # Normalize the noise array [0,1]
     noise_array -= noise_array.min()
     noise_array /= noise_array.max()
 
     return noise_array
 
 
+# Convert the noise array to grayscale
 def noise_to_grayscale(noise_array):
-    arr = np.uint8(noise_array * 255)
+    clamped_noise = noise_array
+    #clamped_noise = np.where(noise_array < 0.3, 0, noise_array)
+    arr = np.uint8(clamped_noise * 255)
     grayscale = np.stack((arr,) * 3, axis=-1)
     return grayscale
 
 
+# pygame loops and main function
 def run(width, height, scale, octaves, persistence, lacunarity):
 
     SCREEN_WIDTH = width
@@ -95,7 +108,7 @@ def run(width, height, scale, octaves, persistence, lacunarity):
     surface = pygame.surfarray.make_surface(grayscale)
     print("Noise Calculation Finished")
 
-    # Main loop
+    # Main loop for pygame window
     run = True
     noise_drawn = False
     while run:
@@ -114,11 +127,14 @@ def run(width, height, scale, octaves, persistence, lacunarity):
     pygame.quit()
 
 if __name__ == "__main__":
+    
+    # Parameters for noise generation
     scale = 100.0
     octaves = 4
     persistence = 0.5
     lacunarity = 2.0
 
+    # Pygame window parameters
     WIDTH = 800
     HEIGHT = 600
 
