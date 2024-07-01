@@ -3,7 +3,7 @@
 Hi, I've coded a perlin fractal noise generator using python's pygame and few other libraries.
 
 Requirements.txt contains the libraries I used to generate the noise.
-If you are a lazy person like me just below in the terminal.
+If you are a lazy person like me just type below in the terminal.
 ```
 pip install -r requirements.txt
 ```
