@@ -1,4 +1,4 @@
-﻿# Perlin-Noise-in-Python
+﻿# Perlin Fractal Noise in Python
 
 Hi, I've coded a perlin fractal noise generator using python's pygame and few other libraries.
 
