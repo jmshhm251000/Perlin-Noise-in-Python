@@ -1,7 +1,9 @@
+import sys
 import pygame
 import random
 import math
 import numpy as np
+import glm
 
 
 # Generate gradients(a unit vector) for each grid points
@@ -9,9 +11,10 @@ def generate_gradients(width, height):
     gradients = {}
     for x in range(width + 1):
         for y in range(height + 1):
+            random.seed(x + y * 57)
             angle = random.uniform(0, 2 * math.pi)
             # Store each gradient of length 1 in R^2, cos^2 + sin^2 = 1
-            gradients[(x, y)] = (math.cos(angle), math.sin(angle))
+            gradients[(x, y)] = glm.vec2(math.cos(angle), math.sin(angle))
     return gradients
 
 
@@ -20,12 +23,14 @@ def dot_product(x, y, ix, iy, gradients):
     dx = x - ix
     dy = y - iy
     gradient = gradients[(ix, iy)]
-    return dx * gradient[0] + dy * gradient[1]
+    distance = glm.vec2(dx, dy)
+    return glm.dot(distance, gradient)
+    #return dx * gradient[0] + dy * gradient[1]
 
 
 # Smooth interpolation between grid points
-def fade(t):
-    return t * t * t * (t * (t * 6 - 15) + 10)
+def smoothstep(t):
+    return (3.0 * t * t) - (2.0 * t * t * t)
 
 
 # Linear interpolation between two points
@@ -41,8 +46,8 @@ def noise(x, y, gradients):
     y1 = y0 + 1
 
     #fade function for smooth interpolation
-    dx = fade(x - x0)
-    dy = fade(y - y0)
+    dx = smoothstep(x - x0)
+    dy = smoothstep(y - y0)
 
     #dot product of bottom two grid points
     dp0 = dot_product(x, y, x0, y0, gradients)
@@ -71,14 +76,16 @@ def generate_perlin_noise(width, height, scale, octaves, persistence, lacunarity
     for octave in range(octaves):
         frequency = lacunarity ** octave
         amplitude = persistence ** octave
+        xvf = xv * frequency
+        yvf = yv * frequency
+
         for x in range(width):
             for y in range(height):
-                noise_value = noise(xv[y, x] * frequency, yv[y, x] * frequency, gradients) * amplitude
+                noise_value = noise(xvf[y, x], yvf[y, x], gradients) * amplitude
                 noise_array[x, y] += noise_value
     
-    # Normalize the noise array [0,1]
-    noise_array -= noise_array.min()
-    noise_array /= noise_array.max()
+    # Normalize the noise array from [-1,1] to [0,1]
+    noise_array = (noise_array + 1) / 2
 
     return noise_array
 
@@ -103,10 +110,15 @@ def run(width, height, scale, octaves, persistence, lacunarity):
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Perlin Fractal Noise")
 
+    start_ticks = pygame.time.get_ticks()
+
     noise_array = generate_perlin_noise(SCREEN_WIDTH, SCREEN_HEIGHT, scale, octaves, persistence, lacunarity)
     grayscale = noise_to_grayscale(noise_array)
     surface = pygame.surfarray.make_surface(grayscale)
-    print("Noise Calculation Finished")
+
+    end_ticks = pygame.time.get_ticks()
+    elapsed_time = (end_ticks - start_ticks)
+    print(f"Noise Calculation Finished in {elapsed_time} ms.")
 
     # Main loop for pygame window
     run = True
@@ -125,6 +137,7 @@ def run(width, height, scale, octaves, persistence, lacunarity):
             noise_drawn = True
 
     pygame.quit()
+    sys.exit()
 
 if __name__ == "__main__":
     
